@@ -26,7 +26,9 @@ namespace RestaurantAPI.Repositories
 
         public async Task<Restaurant?> GetByIdAsync(int id)
         {
-            return await _context.Restaurants.FindAsync(id);
+            return await _context.Restaurants
+                         .Include(r => r.Location)
+                         .FirstOrDefaultAsync(r => r.Id == id);
         }
 
         public async Task AddAsync(Restaurant entity)

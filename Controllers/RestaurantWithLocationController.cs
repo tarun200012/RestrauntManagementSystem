@@ -151,5 +151,25 @@ namespace RestaurantAPI.Controllers
             return Ok(dto);
         }
 
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteRestaurant(int id)
+        {
+            var restaurant = await _restaurantService.GetByIdAsync(id);
+            if (restaurant == null)
+                return NotFound("Restaurant not found.");
+
+            // Optionally: Also delete the associated location explicitly
+            var locationId = restaurant.LocationId;
+
+            await _restaurantService.DeleteAsync(id);
+
+            // If needed and not handled by cascade delete:
+            if (locationId != null)
+                await _locationService.DeleteAsync(locationId.Value);
+
+            return NoContent(); // 204 No Content
+        }
+
+
     }
 }
