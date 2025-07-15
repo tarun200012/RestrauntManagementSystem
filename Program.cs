@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using RestaurantAPI.Data;
 using RestaurantAPI.Repositories;
 using RestaurantAPI.Repositories.Interfaces;
@@ -17,12 +17,32 @@ builder.Services.AddScoped<ILocationRepository, LocationRepository>();
 builder.Services.AddScoped<IRestaurantService, RestaurantService>();
 builder.Services.AddScoped<ILocationService, LocationService>();
 
+// ✅ Add CORS
+var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(name: MyAllowSpecificOrigins,
+        builder =>
+        {
+            builder.WithOrigins("http://localhost:4200")
+                   .AllowAnyHeader()
+                   .AllowAnyMethod();
+        });
+});
+
 // Add controllers
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(); // Optional
 
 var app = builder.Build();
+
+// ✅ Enable CORS
+app.UseCors(MyAllowSpecificOrigins);
+
+app.UseAuthorization();
+app.MapControllers();
+app.Run();
 
 // Enable Swagger middleware only in development
 if (app.Environment.IsDevelopment())
