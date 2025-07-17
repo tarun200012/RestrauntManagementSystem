@@ -10,5 +10,7 @@ namespace RestaurantAPI.Services.Interfaces
         Task<Restaurant> AddAsync(Restaurant restaurant);
         Task<Restaurant> UpdateAsync(Restaurant restaurant);
         Task DeleteAsync(int id);
+        Task<IEnumerable<Restaurant>> AddBulkAsync(List<Restaurant> restaurants);
+
     }
 }
