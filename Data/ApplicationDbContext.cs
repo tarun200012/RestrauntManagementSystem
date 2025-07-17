@@ -13,13 +13,19 @@ namespace RestaurantAPI.Data
         {
         }
 
-       protected override void OnModelCreating(ModelBuilder modelBuilder)
-{
-    modelBuilder.Entity<Restaurant>()
-        .HasOne(r => r.Location)
-        .WithOne(l => l.Restaurant)
-        .HasForeignKey<Restaurant>(r => r.LocationId)
-        .OnDelete(DeleteBehavior.Cascade); // Delete both if needed
-}
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+
+            modelBuilder.Entity<Restaurant>()
+                .HasOne(r => r.Location)
+                .WithOne(l => l.Restaurant)
+                .HasForeignKey<Restaurant>(r => r.LocationId)
+                .OnDelete(DeleteBehavior.Cascade); // Delete both if needed
+
+            modelBuilder.Entity<Restaurant>().HasQueryFilter(r => !r.IsDeleted);
+
+
+        }
     }
 }

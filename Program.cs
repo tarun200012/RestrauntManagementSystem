@@ -30,6 +30,8 @@ try
 
     builder.Services.AddScoped<IRestaurantService, RestaurantService>();
     builder.Services.AddScoped<ILocationService, LocationService>();
+    builder.Services.AddAutoMapper(typeof(Program));
+
 
     // ✅ Add CORS
     var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";

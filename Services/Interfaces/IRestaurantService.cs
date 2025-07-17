@@ -1,4 +1,5 @@
-﻿using RestaurantAPI.Models;
+﻿using RestaurantAPI.Dtos;
+using RestaurantAPI.Models;
 
 namespace RestaurantAPI.Services.Interfaces
 {
@@ -11,6 +12,9 @@ namespace RestaurantAPI.Services.Interfaces
         Task<Restaurant> UpdateAsync(Restaurant restaurant);
         Task DeleteAsync(int id);
         Task<IEnumerable<Restaurant>> AddBulkAsync(List<Restaurant> restaurants);
-
+        Task<RestaurantWithLocationDto> CreateWithLocationAsync(RestaurantWithLocationDto dto);
+        Task SoftDeleteAsync(int id);
+        Task<RestaurantWithLocationDto> UpdateWithLocationAsync(int id, RestaurantWithLocationDto dto); // ✅ Added missing method signature
+        Task<List<RestaurantWithLocationDto>> BulkCreateWithLocationAsync(List<RestaurantWithLocationDto> dtoList);
     }
 }

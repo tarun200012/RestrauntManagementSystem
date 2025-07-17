@@ -24,5 +24,7 @@ namespace RestaurantAPI.Models
 
         // Foreign key
         public int ? LocationId { get; set; }
+
+        public bool IsDeleted { get; set; }
     }
 }

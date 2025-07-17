@@ -1,5 +1,10 @@
-﻿using NLog;
+﻿using AutoMapper;
+using Microsoft.EntityFrameworkCore;
+using NLog;
+using RestaurantAPI.Data;
+using RestaurantAPI.Dtos;
 using RestaurantAPI.Models;
+using RestaurantAPI.Repositories;
 using RestaurantAPI.Repositories.Interfaces;
 using RestaurantAPI.Services.Interfaces;
 
@@ -9,10 +14,18 @@ namespace RestaurantAPI.Services
     {
         private static readonly Logger _logger = LogManager.GetCurrentClassLogger();
         private readonly IRestaurantRepository _restaurantRepository;
+        private readonly ILocationService _locationService;
+        private readonly ILocationRepository _locationRepository;
+        private readonly IMapper _mapper;
+        private readonly ApplicationDbContext _context;
 
-        public RestaurantService(IRestaurantRepository restaurantRepository)
+        public RestaurantService(IRestaurantRepository restaurantRepository, IMapper mapper, ILocationService locationService, ILocationRepository locationRepository, ApplicationDbContext context)
         {
             _restaurantRepository = restaurantRepository;
+            _mapper = mapper;
+            _locationService = locationService;
+            _locationRepository = locationRepository;
+            _context = context;
         }
 
         public async Task<IEnumerable<Restaurant>> GetAllAsync()
@@ -119,10 +132,10 @@ namespace RestaurantAPI.Services
             try
             {
                 foreach (var r in restaurants)
-                await _restaurantRepository.AddAsync(r);
+                    await _restaurantRepository.AddAsync(r);
 
-            await _restaurantRepository.SaveAsync();
-            return restaurants;
+                await _restaurantRepository.SaveAsync();
+                return restaurants;
             }
             catch (Exception ex)
             {
@@ -130,6 +143,129 @@ namespace RestaurantAPI.Services
                 throw;
             }
         }
+
+
+        public async Task<RestaurantWithLocationDto> CreateWithLocationAsync(RestaurantWithLocationDto dto)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+
+            try
+            {
+                var restaurant = _mapper.Map<Restaurant>(dto);
+                var location = _mapper.Map<Location>(dto.Location);
+
+                await _locationRepository.AddAsync(location);
+                await _locationRepository.SaveAsync(); // Ensure the location is saved to get its ID  
+
+                restaurant.LocationId = location.Id;
+
+                await _restaurantRepository.AddAsync(restaurant);
+
+                await _context.SaveChangesAsync(); // Save all changes at once  
+
+                await transaction.CommitAsync();
+
+                restaurant.Location = location;
+                return _mapper.Map<RestaurantWithLocationDto>(restaurant);
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
+
+
+        public async Task SoftDeleteAsync(int id)
+        {
+            var restaurant = await _restaurantRepository.GetByIdAsync(id);
+            if (restaurant == null)
+                throw new NotFoundException($"Restaurant with ID {id} not found.");
+
+            restaurant.IsDeleted = true;
+            await _restaurantRepository.SaveAsync();
+        }
+
+        public async Task<RestaurantWithLocationDto> UpdateWithLocationAsync(int id, RestaurantWithLocationDto dto)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+
+            try
+            {
+                var restaurant = await _restaurantRepository.GetByIdAsync(id);
+                if (restaurant == null)
+                    throw new NotFoundException($"Restaurant with ID {id} not found.");
+
+                Location location;
+
+                if (restaurant.LocationId.HasValue)
+                {
+                    location = await _locationRepository.GetByIdAsync(restaurant.LocationId.Value);
+                    if (location == null)
+                        throw new NotFoundException($"Associated location not found for restaurant ID {id}.");
+                }
+                else
+                {
+                    location = new Location();
+                    await _locationRepository.AddAsync(location);
+                    await _locationRepository.SaveAsync(); // Make sure to save to get the ID
+                    restaurant.LocationId = location.Id;
+                }
+
+                dto.Location.Id = location.Id; 
+                _mapper.Map(dto.Location, location); 
+
+                _locationRepository.Update(location);  // <-- Await here
+                await _locationRepository.SaveAsync();            // <-- Persist location update
+
+                dto.Id = id;
+                _mapper.Map(dto, restaurant);
+                _restaurantRepository.Update(restaurant); // <-- Await here
+                await _restaurantRepository.SaveAsync();             // <-- Persist restaurant update
+
+                await transaction.CommitAsync();
+
+                return _mapper.Map<RestaurantWithLocationDto>(restaurant); // or just return a success message if you prefer
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
+
+
+        public async Task<List<RestaurantWithLocationDto>> BulkCreateWithLocationAsync(List<RestaurantWithLocationDto> dtoList)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var createdRestaurants = new List<Restaurant>();
+
+                foreach (var dto in dtoList)
+                {
+                    var location = _mapper.Map<Location>(dto.Location);
+                    var createdLocation = await _locationService.AddAsync(location);
+
+                    var restaurant = _mapper.Map<Restaurant>(dto);
+                    restaurant.LocationId = createdLocation.Id;
+
+                    await _restaurantRepository.AddAsync(restaurant);
+                    createdRestaurants.Add(restaurant);
+                }
+
+                await _restaurantRepository.SaveAsync();
+                await transaction.CommitAsync();
+
+                return _mapper.Map<List<RestaurantWithLocationDto>>(createdRestaurants);
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
+
 
     }
 }
