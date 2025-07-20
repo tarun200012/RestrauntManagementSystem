@@ -26,5 +26,16 @@ namespace RestaurantAPI.Models
         public int ? LocationId { get; set; }
 
         public bool IsDeleted { get; set; }
+
+
+        [Required]
+        public TimeSpan OpenTime { get; set; }
+
+        [Required]
+        public TimeSpan CloseTime { get; set; }
+
+        public ICollection<MenuItem> MenuItems { get; set; } = new List<MenuItem>();
+
+        public ICollection<Order> Orders { get; set; } = new List<Order>();
     }
 }

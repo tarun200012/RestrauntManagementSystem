@@ -27,9 +27,15 @@ try
 
     builder.Services.AddScoped<IRestaurantRepository, RestaurantRepository>();
     builder.Services.AddScoped<ILocationRepository, LocationRepository>();
-
+    builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+    builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
+    builder.Services.AddScoped<IOrderService, OrderService>();
+    builder.Services.AddScoped<ICustomerService, CustomerService>();
     builder.Services.AddScoped<IRestaurantService, RestaurantService>();
     builder.Services.AddScoped<ILocationService, LocationService>();
+ 
+
+
     builder.Services.AddAutoMapper(typeof(Program));
 
 

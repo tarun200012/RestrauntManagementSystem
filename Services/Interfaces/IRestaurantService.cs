@@ -16,5 +16,7 @@ namespace RestaurantAPI.Services.Interfaces
         Task SoftDeleteAsync(int id);
         Task<RestaurantWithLocationDto> UpdateWithLocationAsync(int id, RestaurantWithLocationDto dto); // ✅ Added missing method signature
         Task<List<RestaurantWithLocationDto>> BulkCreateWithLocationAsync(List<RestaurantWithLocationDto> dtoList);
+        Task<List<MenuItem>> GetMenuByRestaurantIdAsync(int restaurantId);
+
     }
 }

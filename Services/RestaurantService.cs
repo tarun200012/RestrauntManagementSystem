@@ -266,6 +266,19 @@ namespace RestaurantAPI.Services
             }
         }
 
+        public async Task<List<MenuItem>> GetMenuByRestaurantIdAsync(int restaurantId)
+        {
+            try
+            {
+                _logger.Info($"Getting menu items for restaurant ID: {restaurantId}");
+                return await _restaurantRepository.GetMenuItemsByRestaurantIdAsync(restaurantId);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error($"Error while fetching menu items for restaurant ID: {restaurantId}", ex);
+                throw;
+            }
+        }
 
     }
 }

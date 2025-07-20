@@ -15,18 +15,19 @@ namespace RestaurantAPI.Controllers
         private readonly IRestaurantService _restaurantService;
         private readonly ILocationService _locationService;
         private readonly IMapper _mapper;
+        private readonly IOrderService _orderService; 
 
 
         public RestaurantWithLocationController(
             IRestaurantService restaurantService,
             ILocationService locationService,
-            IMapper mapper
+            IMapper mapper, IOrderService orderService
             )
         {
             _restaurantService = restaurantService;
             _locationService = locationService;
             _mapper = mapper;
-
+            _orderService = orderService;
         }
 
         [HttpPost]
@@ -95,6 +96,37 @@ namespace RestaurantAPI.Controllers
             var resultDtos = await _restaurantService.BulkCreateWithLocationAsync(dto.Restaurants);
             return Ok(new { message = "Bulk insert successful", resultDtos });
         }
+
+        [HttpGet("menu")]
+        public async Task<IActionResult> GetMenuByRestaurantId([FromQuery] int id)
+        {
+            var menuItems = await _restaurantService.GetMenuByRestaurantIdAsync(id);
+
+            if (menuItems == null || !menuItems.Any())
+                throw new NotFoundException($"No menu items found for restaurant ID {id}");
+
+            return Ok(menuItems);
+        }
+
+        [HttpPost("schedule_order/{restaurantId}/customer/{customerId}")]
+        public async Task<IActionResult> ScheduleOrder(int restaurantId, int customerId, [FromBody] ScheduleOrderRequest request)
+        {
+            try
+            {
+                var (isSuccess, message) = await _orderService.ScheduleOrderAsync(restaurantId, customerId, request);
+                if (!isSuccess)
+                    return BadRequest(new { success = false, message });
+
+                return Ok(new { success = true, message });
+            }
+            catch (Exception ex)
+            {
+                _logger.Error("Error scheduling order");
+                throw;
+            }
+        }
+
+
 
     }
 }

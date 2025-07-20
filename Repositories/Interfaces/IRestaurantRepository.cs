@@ -9,5 +9,8 @@ namespace RestaurantAPI.Repositories.Interfaces
         // IRestaurantRepository.cs
         Task AddBulkAsync(List<Restaurant> restaurants);
 
+        Task<List<MenuItem>> GetMenuItemsByRestaurantIdAsync(int restaurantId);
+
+
     }
 }

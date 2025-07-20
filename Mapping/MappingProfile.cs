@@ -11,6 +11,7 @@ namespace RestaurantAPI.Mapping
         {
             CreateMap<Restaurant, RestaurantWithLocationDto>().ReverseMap();
             CreateMap<Location, LocationDto>().ReverseMap();
+            CreateMap<Customer, CustomerDto>().ReverseMap();
         }
     }
 }

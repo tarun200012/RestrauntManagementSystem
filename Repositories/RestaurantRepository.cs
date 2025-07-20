@@ -129,5 +129,12 @@ namespace RestaurantAPI.Repositories
                 throw;
             }
         }
+        public async Task<List<MenuItem>> GetMenuItemsByRestaurantIdAsync(int restaurantId)
+        {
+            return await _context.MenuItems
+                .Where(m => m.RestaurantId == restaurantId && !m.IsDeleted)
+                .ToListAsync();
+        }
+
     }
 }
