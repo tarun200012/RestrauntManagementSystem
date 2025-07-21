@@ -8,6 +8,10 @@
         public string Mobile { get; set; }
         public string Email { get; set; }
 
+        public TimeSpan OpenTime { get; set; }  // Using TimeOnly for time representation
+
+        public TimeSpan CloseTime { get; set; }  // Using TimeOnly for time representation
+
         public LocationDto Location { get; set; }  // Embedded one-to-one location
     }
 
