@@ -30,7 +30,9 @@ public class OrderService : IOrderService
             if (restaurant == null)
                 return (false, $"Restaurant with ID {restaurantId} not found.");
 
-            var scheduleTime = request.ScheduledAt;
+
+            var scheduledUtcTime = request.ScheduledAt;
+            var scheduleTime = scheduledUtcTime.ToLocalTime(); // Now in local time
             var scheduleTimeOfDay = scheduleTime.TimeOfDay;
 
             if (restaurant.OpenTime == null || restaurant.CloseTime == null)
@@ -57,6 +59,7 @@ public class OrderService : IOrderService
                 RestaurantId = restaurantId,
                 CustomerId = customerId,
                 ScheduledAt = scheduleTime,
+                IsConfirmed = true, // Initially not confirmed
                 OrderItems = request.OrderItems.Select(i => new OrderItem
                 {
                     MenuItemId = i.MenuItemId,
@@ -102,5 +105,11 @@ public class OrderService : IOrderService
             throw new Exception("Failed to save changes to the database.", ex);
         }
     }
+
+    public async Task<IEnumerable<Order>> GetOrdersForCustomerAtRestaurantAsync(int restaurantId, int customerId)
+    {
+        return await _orderRepository.GetOrdersForCustomerAtRestaurantAsync(restaurantId, customerId);
+    }
+
 
 }

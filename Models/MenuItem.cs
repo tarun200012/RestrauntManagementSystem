@@ -1,5 +1,6 @@
 ﻿using RestaurantAPI.Models;
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 public class MenuItem
 {
@@ -17,6 +18,7 @@ public class MenuItem
     [Required]
     public int RestaurantId { get; set; }
 
+    [JsonIgnore]
     public Restaurant? Restaurant { get; set; }
 
     public bool IsDeleted { get; set; }

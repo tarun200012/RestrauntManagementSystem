@@ -126,6 +126,22 @@ namespace RestaurantAPI.Controllers
             }
         }
 
+        [HttpGet("orders/restaurant/{restaurantId}/customer/{customerId}")]
+        public async Task<IActionResult> GetOrdersForCustomerAtRestaurant(int restaurantId, int customerId)
+        {
+            try
+            {
+                var orders = await _orderService.GetOrdersForCustomerAtRestaurantAsync(restaurantId, customerId);
+                    return Ok(new { success = true, data = orders });
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, $"Error fetching orders for RestaurantId {restaurantId} and CustomerId {customerId}");
+                throw;
+            }
+        }
+
+
 
 
     }

@@ -1,5 +1,6 @@
 ﻿using RestaurantAPI.Models;
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 public class Order
 {
@@ -9,11 +10,13 @@ public class Order
     [Required]
     public int CustomerId { get; set; }
 
+    [JsonIgnore]
     public Customer? Customer { get; set; }
 
     [Required]
     public int RestaurantId { get; set; }
 
+    [JsonIgnore]
     public Restaurant? Restaurant { get; set; }
 
     public DateTime ScheduledAt { get; set; }

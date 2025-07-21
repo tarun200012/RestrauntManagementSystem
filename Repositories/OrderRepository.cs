@@ -32,6 +32,16 @@ namespace RestaurantAPI.Repositories
                 .ToListAsync();
         }
 
+        public async Task<IEnumerable<Order>> GetOrdersForCustomerAtRestaurantAsync(int restaurantId, int customerId)
+        {
+            return await _context.Orders
+        .Where(o => o.RestaurantId == restaurantId && o.CustomerId == customerId && o.IsConfirmed)
+        .Include(o => o.OrderItems)
+            .ThenInclude(oi => oi.MenuItem) // Include MenuItem inside OrderItem
+        .ToListAsync();
+        }
+
+
 
     }
 }

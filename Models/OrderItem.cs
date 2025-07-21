@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 public class OrderItem
 {
@@ -8,6 +9,7 @@ public class OrderItem
     [Required]
     public int OrderId { get; set; }
 
+    [JsonIgnore]
     public Order? Order { get; set; }
 
     [Required]
