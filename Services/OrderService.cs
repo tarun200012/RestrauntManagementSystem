@@ -35,6 +35,10 @@ public class OrderService : IOrderService
             var scheduleTime = scheduledUtcTime.ToLocalTime(); // Now in local time
             var scheduleTimeOfDay = scheduleTime.TimeOfDay;
 
+            if (scheduleTime < DateTime.Now)
+                return (false, "You cannot schedule an order in the past.");
+
+
             if (restaurant.OpenTime == null || restaurant.CloseTime == null)
                 return (false, "Restaurant's opening and closing time not set.");
 
