@@ -10,6 +10,7 @@ namespace RestaurantAPI.Models
         public int Id { get; set; }
 
         [Required]
+        [MaxLength(100)]
         public string City { get; set; } = string.Empty;
 
         [Required]
