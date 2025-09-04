@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using RestaurantAPI.DTOs.Admin;
 using RestaurantAPI.Models;
 
 namespace RestaurantAPI.Data
@@ -12,14 +13,71 @@ namespace RestaurantAPI.Data
         public DbSet<Order> Orders { get; set; }
         public DbSet<OrderItem> OrderItems { get; set; }
 
+        public DbSet<Role> Role { get; set; }
+
+        public DbSet<Coupon> Coupons { get; set; }
+
+        public DbSet<CouponRestaurant> CouponRestaurants { get; set; }
+
+        public DbSet<CouponCustomer> CouponsCustomer { get; set; }
+
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)
         {
         }
-
+        public DbSet<RevenueDto> RevenueDtos { get; set; } = null!; // keyless mapping for SP output
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            // Coupon ↔ Restaurant (many-to-many)
+            modelBuilder.Entity<CouponRestaurant>()
+                .HasKey(cr => new { cr.CouponId, cr.RestaurantId });
+
+            modelBuilder.Entity<CouponRestaurant>()
+                .HasOne(cr => cr.Coupon)
+                .WithMany(c => c.CouponRestaurants)
+                .HasForeignKey(cr => cr.CouponId);
+
+            modelBuilder.Entity<CouponRestaurant>()
+                .HasOne(cr => cr.Restaurant)
+                .WithMany(r => r.CouponRestaurants)
+                .HasForeignKey(cr => cr.RestaurantId);
+
+            // Coupon ↔ Customer (many-to-many)
+            modelBuilder.Entity<CouponCustomer>()
+                .HasKey(cc => new { cc.CouponId, cc.CustomerId });
+
+            modelBuilder.Entity<CouponCustomer>()
+                .HasOne(cc => cc.Coupon)
+                .WithMany(c => c.CouponCustomers)
+                .HasForeignKey(cc => cc.CouponId);
+
+            modelBuilder.Entity<CouponCustomer>()
+                .HasOne(cc => cc.Customer)
+                .WithMany(cu => cu.CouponCustomers)
+                .HasForeignKey(cc => cc.CustomerId);
+
+            //one-many orders-coupouns
+            modelBuilder.Entity<Order>()
+                .HasOne(o => o.Coupon)
+                .WithMany(c => c.Orders)
+                .HasForeignKey(o => o.CouponId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // keyless mapping for stored proc result
+            modelBuilder.Entity<RevenueDto>().HasNoKey().ToView(null); // not mapped to a table or view
+
+            // Unique Email
+            modelBuilder.Entity<Customer>()
+                .HasIndex(c => c.Email)
+                .IsUnique();
+
+            // Customer ↔ Role relationship
+            modelBuilder.Entity<Customer>()
+                .HasOne(c => c.Role)
+                .WithMany(r => r.Customers)
+                .HasForeignKey(c => c.RoleId);
 
             modelBuilder.Entity<Restaurant>()
                 .HasOne(r => r.Location)

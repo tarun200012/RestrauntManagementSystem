@@ -1,8 +1,10 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NLog; // ✅ Add NLog
 using RestaurantAPI.Dtos;
 using RestaurantAPI.Models;
+using RestaurantAPI.Models.Common;
 using RestaurantAPI.Services.Interfaces;
 
 namespace RestaurantAPI.Controllers
@@ -41,6 +43,7 @@ namespace RestaurantAPI.Controllers
 
         }
 
+        [Authorize(Roles = "Admin,Customer")]
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateRestaurantWithLocation(int id, [FromBody] RestaurantWithLocationDto dto)
         {
@@ -62,6 +65,14 @@ namespace RestaurantAPI.Controllers
             var result = _mapper.Map<List<RestaurantWithLocationDto>>(restaurants);
             return Ok(result);
         }
+
+        [HttpPost("paginated")]
+        public async Task<IActionResult> GetPaginated([FromBody] PaginatedRequest request)
+        {
+            var result = await _restaurantService.GetPaginatedAsync(request);
+            return Ok(result);
+        }
+
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)

@@ -2,6 +2,8 @@
 {
     public DateTime ScheduledAt { get; set; }
 
+    public int? CouponId { get; set; }
+
     public List<OrderItemDto> OrderItems { get; set; } = new List<OrderItemDto>();
 }
 

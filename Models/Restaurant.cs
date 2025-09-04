@@ -38,5 +38,10 @@ namespace RestaurantAPI.Models
         public ICollection<MenuItem> MenuItems { get; set; } = new List<MenuItem>();
 
         public ICollection<Order> Orders { get; set; } = new List<Order>();
+
+
+        // Navigation property for Coupons
+        public ICollection<CouponRestaurant> CouponRestaurants { get; set; } = new List<CouponRestaurant>();
+
     }
 }

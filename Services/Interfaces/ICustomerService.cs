@@ -1,4 +1,5 @@
 ﻿using RestaurantAPI.Dtos;
+using RestaurantAPI.DTOs.Common;
 
 namespace RestaurantAPI.Services.Interfaces
 {
@@ -7,5 +8,7 @@ namespace RestaurantAPI.Services.Interfaces
         Task<IEnumerable<CustomerDto>> GetAllAsync();
         Task<CustomerDto?> GetByIdAsync(int id);
         Task<CustomerDto> AddAsync(CustomerDto dto);
+
+        Task<PaginatedResponse<CustomerDto>> GetPaginatedAsync(string search, int pageNumber, int pageSize);
     }
 }

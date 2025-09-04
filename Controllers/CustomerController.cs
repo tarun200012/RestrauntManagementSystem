@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using NLog;
 using RestaurantAPI.Dtos;
+using RestaurantAPI.DTOs.Common;
 using RestaurantAPI.Services.Interfaces;
 
 namespace RestaurantAPI.Controllers
@@ -22,6 +23,14 @@ namespace RestaurantAPI.Controllers
         {
             _logger.Info("Fetching all customers");
             var customers = await _service.GetAllAsync();
+            return Ok(customers);
+        }
+
+        [HttpGet("paginated")]
+        public async Task<ActionResult<PaginatedResponse<CustomerDto>>> SearchCustomers([FromQuery] string search = "",[FromQuery] int pageNumber = 1,[FromQuery] int pageSize = 50)
+        {
+            _logger.Info($"Searching customers with query: {search}, page: {pageNumber}, size: {pageSize}");
+            var customers = await _service.GetPaginatedAsync(search, pageNumber, pageSize);
             return Ok(customers);
         }
 

@@ -16,6 +16,9 @@ public class Order
     [Required]
     public int RestaurantId { get; set; }
 
+    public int? CouponId { get; set; }
+    public Coupon Coupon { get; set; }
+
     [JsonIgnore]
     public Restaurant? Restaurant { get; set; }
 

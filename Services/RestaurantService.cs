@@ -3,7 +3,9 @@ using Microsoft.EntityFrameworkCore;
 using NLog;
 using RestaurantAPI.Data;
 using RestaurantAPI.Dtos;
+using RestaurantAPI.DTOs.Common;
 using RestaurantAPI.Models;
+using RestaurantAPI.Models.Common;
 using RestaurantAPI.Repositories;
 using RestaurantAPI.Repositories.Interfaces;
 using RestaurantAPI.Services.Interfaces;
@@ -278,6 +280,89 @@ namespace RestaurantAPI.Services
                 _logger.Error($"Error while fetching menu items for restaurant ID: {restaurantId}", ex);
                 throw;
             }
+        }
+
+        public async Task<PaginatedResponse<RestaurantWithLocationDto>> GetPaginatedAsync(PaginatedRequest request)
+        {
+            _logger.Info("Fetching paginated restaurants with filters & sorting");
+
+            var query = _context.Restaurants
+                .Include(r => r.Location)
+                .Where(r => !r.IsDeleted) // Ignore deleted
+                .AsQueryable();
+
+            // Apply Filters
+            foreach (var filter in request.Filters)
+            {
+                var val = filter.Value?.ToLower();
+                if (string.IsNullOrWhiteSpace(val)) continue;
+
+                switch (filter.Field.ToLower())
+                {
+                    case "name":
+                        query = query.Where(r => r.Name.Contains(val));
+                        break;
+                    case "email":
+                        query = query.Where(r => r.Email.Contains(val));
+                        break;
+                    case "mobile":
+                        query = query.Where(r => r.Mobile.Contains(val));
+                        break;
+                    case "location.city":
+                        query = query.Where(r => r.Location != null && r.Location.City.Contains(val));
+                        break;
+                }
+            }
+
+            // Apply Sorting
+            bool isFirst = true;
+            foreach (var sort in request.Sort)
+            {
+                var isAsc = sort.Direction.ToLower() == "asc";
+
+                if (isFirst)
+                {
+                    query = sort.Field.ToLower() switch
+                    {
+                        "name" => isAsc ? query.OrderBy(r => r.Name) : query.OrderByDescending(r => r.Name),
+                        "email" => isAsc ? query.OrderBy(r => r.Email) : query.OrderByDescending(r => r.Email),
+                        "mobile" => isAsc ? query.OrderBy(r => r.Mobile) : query.OrderByDescending(r => r.Mobile),
+                        "location.city" => isAsc ? query.OrderBy(r => r.Location!.City) : query.OrderByDescending(r => r.Location!.City),
+                        "location.state" => isAsc ? query.OrderBy(r => r.Location!.State) : query.OrderByDescending(r => r.Location!.State),
+                        _ => query
+                    };
+                    isFirst = false;
+                }
+                else
+                {
+                    query = sort.Field.ToLower() switch
+                    {
+                        "name" => isAsc ? ((IOrderedQueryable<Restaurant>)query).ThenBy(r => r.Name) : ((IOrderedQueryable<Restaurant>)query).ThenByDescending(r => r.Name),
+                        "email" => isAsc ? ((IOrderedQueryable<Restaurant>)query).ThenBy(r => r.Email) : ((IOrderedQueryable<Restaurant>)query).ThenByDescending(r => r.Email),
+                        "mobile" => isAsc ? ((IOrderedQueryable<Restaurant>)query).ThenBy(r => r.Mobile) : ((IOrderedQueryable<Restaurant>)query).ThenByDescending(r => r.Mobile),
+                        "location.city" => isAsc ? ((IOrderedQueryable<Restaurant>)query).ThenBy(r => r.Location!.City) : ((IOrderedQueryable<Restaurant>)query).ThenByDescending(r => r.Location!.City),
+                        "location.state" => isAsc ? ((IOrderedQueryable<Restaurant>)query).ThenBy(r => r.Location!.State) : ((IOrderedQueryable<Restaurant>)query).ThenByDescending(r => r.Location!.State),
+                        _ => query
+                    };
+                }
+            }
+
+            var totalCount = await query.CountAsync();
+
+            var pagedData = await query
+                .Skip((request.PageNumber - 1) * request.PageSize)
+                .Take(request.PageSize)
+                .ToListAsync();
+
+            var mappedData = _mapper.Map<List<RestaurantWithLocationDto>>(pagedData);
+
+            return new PaginatedResponse<RestaurantWithLocationDto>
+            {
+                TotalCount = totalCount,
+                PageNumber = request.PageNumber,
+                PageSize = request.PageSize,
+                Data = mappedData
+            };
         }
 
     }

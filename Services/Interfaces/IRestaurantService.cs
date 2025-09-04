@@ -1,5 +1,7 @@
 ﻿using RestaurantAPI.Dtos;
+using RestaurantAPI.DTOs.Common;
 using RestaurantAPI.Models;
+using RestaurantAPI.Models.Common;
 
 namespace RestaurantAPI.Services.Interfaces
 {
@@ -17,6 +19,7 @@ namespace RestaurantAPI.Services.Interfaces
         Task<RestaurantWithLocationDto> UpdateWithLocationAsync(int id, RestaurantWithLocationDto dto); // ✅ Added missing method signature
         Task<List<RestaurantWithLocationDto>> BulkCreateWithLocationAsync(List<RestaurantWithLocationDto> dtoList);
         Task<List<MenuItem>> GetMenuByRestaurantIdAsync(int restaurantId);
+        Task<PaginatedResponse<RestaurantWithLocationDto>> GetPaginatedAsync(PaginatedRequest request);
 
     }
 }

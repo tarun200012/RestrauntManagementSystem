@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using NLog;
 using RestaurantAPI.Data;
+using RestaurantAPI.Models;
 using RestaurantAPI.Repositories.Interfaces;
 using RestaurantAPI.Services.Interfaces;
 
@@ -42,7 +43,20 @@ public class OrderService : IOrderService
             if (restaurant.OpenTime == null || restaurant.CloseTime == null)
                 return (false, "Restaurant's opening and closing time not set.");
 
-            if (scheduleTimeOfDay < restaurant.OpenTime || scheduleTimeOfDay > restaurant.CloseTime)
+            bool isOpen;
+
+            if (restaurant.OpenTime < restaurant.CloseTime)
+            {
+                // ✅ Same day window
+                isOpen = scheduleTimeOfDay >= restaurant.OpenTime && scheduleTimeOfDay <= restaurant.CloseTime;
+            }
+            else
+            {
+                // ✅ Overnight window (spans midnight)
+                isOpen = scheduleTimeOfDay >= restaurant.OpenTime || scheduleTimeOfDay <= restaurant.CloseTime;
+            }
+
+            if (!isOpen)
             {
                 return (false, $"Order time {scheduleTime:t} is outside restaurant hours ({restaurant.OpenTime:t} - {restaurant.CloseTime:t}).");
             }
@@ -57,12 +71,23 @@ public class OrderService : IOrderService
             {
                 return (false, $"The selected 1-hour time slot ({windowStart:t} - {windowEnd:t}) is fully booked. Please choose a different time.");
             }
+            Coupon coupon = null;
+            if (request.CouponId.HasValue)
+            {
+                coupon = await _context.Coupons.FindAsync(request.CouponId.Value);
+                if (coupon == null || !coupon.IsActive ||
+                    coupon.StartDate > DateTime.UtcNow || coupon.EndDate < DateTime.UtcNow)
+                {
+                    return (false, "Invalid or expired coupon.");
+                }
+            }
 
             var order = new Order
             {
                 RestaurantId = restaurantId,
                 CustomerId = customerId,
                 ScheduledAt = scheduleTime,
+                CouponId = request.CouponId ?? null,
                 IsConfirmed = true, // Initially not confirmed
                 OrderItems = request.OrderItems.Select(i => new OrderItem
                 {
