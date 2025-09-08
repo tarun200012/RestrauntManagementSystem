@@ -30,6 +30,8 @@ namespace RestaurantAPI.Data
         {
             base.OnModelCreating(modelBuilder);
 
+
+
             // Coupon ↔ Restaurant (many-to-many)
             modelBuilder.Entity<CouponRestaurant>()
                 .HasKey(cr => new { cr.CouponId, cr.RestaurantId });
@@ -37,12 +39,14 @@ namespace RestaurantAPI.Data
             modelBuilder.Entity<CouponRestaurant>()
                 .HasOne(cr => cr.Coupon)
                 .WithMany(c => c.CouponRestaurants)
-                .HasForeignKey(cr => cr.CouponId);
+                .HasForeignKey(cr => cr.CouponId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<CouponRestaurant>()
                 .HasOne(cr => cr.Restaurant)
                 .WithMany(r => r.CouponRestaurants)
-                .HasForeignKey(cr => cr.RestaurantId);
+                .HasForeignKey(cr => cr.RestaurantId)
+                 .OnDelete(DeleteBehavior.Restrict);
 
             // Coupon ↔ Customer (many-to-many)
             modelBuilder.Entity<CouponCustomer>()
@@ -51,19 +55,21 @@ namespace RestaurantAPI.Data
             modelBuilder.Entity<CouponCustomer>()
                 .HasOne(cc => cc.Coupon)
                 .WithMany(c => c.CouponCustomers)
-                .HasForeignKey(cc => cc.CouponId);
+                .HasForeignKey(cc => cc.CouponId)
+                 .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<CouponCustomer>()
                 .HasOne(cc => cc.Customer)
                 .WithMany(cu => cu.CouponCustomers)
-                .HasForeignKey(cc => cc.CustomerId);
+                .HasForeignKey(cc => cc.CustomerId)
+                 .OnDelete(DeleteBehavior.Restrict);
 
             //one-many orders-coupouns
             modelBuilder.Entity<Order>()
                 .HasOne(o => o.Coupon)
                 .WithMany(c => c.Orders)
                 .HasForeignKey(o => o.CouponId)
-                .OnDelete(DeleteBehavior.SetNull);
+                .OnDelete(DeleteBehavior.Restrict);
 
             // keyless mapping for stored proc result
             modelBuilder.Entity<RevenueDto>().HasNoKey().ToView(null); // not mapped to a table or view
@@ -120,6 +126,9 @@ namespace RestaurantAPI.Data
             modelBuilder.Entity<Restaurant>().HasQueryFilter(r => !r.IsDeleted);
             modelBuilder.Entity<MenuItem>().HasQueryFilter(m => !m.IsDeleted);
             modelBuilder.Entity<Customer>().HasQueryFilter(c => !c.IsDeleted);
+            // Coupon global query filter
+            modelBuilder.Entity<Coupon>().HasQueryFilter(c => !c.IsDeleted);
+
 
 
         }

@@ -134,19 +134,19 @@ namespace RestaurantAPI.Services
                 Name = dto.Name,
                 DiscountType = ParseDiscountType(dto.DiscountType),
                 DiscountValue = dto.DiscountValue,
-                StartDate = dto.StartDate,
-                EndDate = dto.EndDate,
+                StartDate = dto.StartDate.ToLocalTime(),
+                EndDate = dto.EndDate.ToLocalTime(),
                 MinOrderAmount = dto.MinOrderAmount,
                 IsActive = dto.IsActive,
                 // populate navigation collection
                 CouponCustomers = dto.CustomerIds.Select(custId => new CouponCustomer
                 {
                     CustomerId = custId
-                }).ToList() ,
+                }).ToList(),
 
-                CouponRestaurants = dto.RestaurantIds.Select(restId => new CouponRestaurant { 
+                CouponRestaurants = dto.RestaurantIds.Select(restId => new CouponRestaurant {
                     RestaurantId = restId
-                    }).ToList(),
+                }).ToList(),
             };
 
             await _couponRepository.AddAsync(coupon);
@@ -163,8 +163,8 @@ namespace RestaurantAPI.Services
             existing.Name = dto.Name;
             existing.DiscountType = ParseDiscountType(dto.DiscountType);
             existing.DiscountValue = dto.DiscountValue;
-            existing.StartDate = dto.StartDate;
-            existing.EndDate = dto.EndDate;
+            existing.StartDate = dto.StartDate.ToLocalTime();
+            existing.EndDate = dto.EndDate.ToLocalTime();
             existing.MinOrderAmount = dto.MinOrderAmount;
             existing.IsActive = dto.IsActive;
 

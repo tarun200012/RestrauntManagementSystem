@@ -61,7 +61,8 @@ namespace RestaurantAPI.Repositories
 
         public void Delete(Coupon entity)
         {
-            _context.Coupons.Remove(entity);
+            entity.IsDeleted = true;
+            _context.Coupons.Update(entity);
         }
 
         public async Task SaveAsync()

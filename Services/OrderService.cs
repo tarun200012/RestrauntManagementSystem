@@ -76,7 +76,7 @@ public class OrderService : IOrderService
             {
                 coupon = await _context.Coupons.FindAsync(request.CouponId.Value);
                 if (coupon == null || !coupon.IsActive ||
-                    coupon.StartDate > DateTime.UtcNow || coupon.EndDate < DateTime.UtcNow)
+                    coupon.StartDate > scheduleTime || coupon.EndDate < scheduleTime)
                 {
                     return (false, "Invalid or expired coupon.");
                 }
@@ -96,7 +96,7 @@ public class OrderService : IOrderService
                 }).ToList()
             };
 
-            await _orderRepository.AddAsync(order);
+           await _orderRepository.AddAsync(order);
             await _orderRepository.SaveAsync();
 
             await transaction.CommitAsync();

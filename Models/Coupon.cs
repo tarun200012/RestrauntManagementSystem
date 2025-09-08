@@ -34,6 +34,8 @@ namespace RestaurantAPI.Models
 
         public bool IsActive { get; set; } = true;
 
+        // Soft delete flag
+        public bool IsDeleted { get; set; } = false;
         public ICollection<CouponRestaurant> CouponRestaurants { get; set; } = new List<CouponRestaurant>();
         public ICollection<CouponCustomer> CouponCustomers { get; set; } = new List<CouponCustomer>();
         public ICollection<Order> Orders { get; set; } = new List<Order>();
