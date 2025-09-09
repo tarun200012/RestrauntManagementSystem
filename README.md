@@ -72,3 +72,13 @@ Frontend will run at: http://localhost:4200
 The backend already has JWT + RSA keys configured in appsettings.json.
 
 After both frontend & backend are running, you can log in and test the app.
+
+Login Credentials:
+
+Role Admin :
+email - admin@example.com
+password - abc123
+
+Role Customer :
+email - john@example.com
+password - abc123
