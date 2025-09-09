@@ -31,6 +31,7 @@ public class GlobalExceptionMiddleware
                 ArgumentException or ArgumentNullException => StatusCodes.Status400BadRequest,
                 UnauthorizedAccessException => StatusCodes.Status401Unauthorized,
                 DbUpdateConcurrencyException => StatusCodes.Status409Conflict,
+                DbUpdateException => StatusCodes.Status400BadRequest,
                 ValidationException => StatusCodes.Status422UnprocessableEntity,
                 _ => StatusCodes.Status500InternalServerError
             };

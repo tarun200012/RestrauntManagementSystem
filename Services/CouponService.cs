@@ -59,6 +59,7 @@ namespace RestaurantAPI.Services
             var today = DateTime.Today;
             var firstDateOfLastMonth = new DateTime(today.Year, today.Month, 1).AddMonths(-1);
             var lastDateOfLastMonth = firstDateOfLastMonth.AddMonths(1);
+            var monthName = today.ToString("MMMM"); // e.g., "September"
 
             // Step 1: Build aggregate query without Include
             var query = _context.Orders
@@ -76,6 +77,7 @@ namespace RestaurantAPI.Services
                 .SelectMany(o => o.OrderItems.Select(oi => new
                 {
                     o.CustomerId,
+                    o.Id ,
                     Amount = oi.MenuItem.Price * oi.Quantity
                 }))
                 .GroupBy(x => x.CustomerId)
@@ -83,38 +85,94 @@ namespace RestaurantAPI.Services
                 {
                     CustomerId = g.Key,
                     TotalSpent = g.Sum(x => x.Amount),
-                    TotalOrders = g.Count()
+                    TotalOrders = g.Select(x => x.Id).Distinct().Count()
                 })
                 .OrderByDescending(x => x.TotalSpent)
                 .ThenByDescending(x => x.TotalOrders)
-                .Take(10)
                 .ToListAsync()
                 .ConfigureAwait(false);
 
+            // Step 3: Collect eligible customers
+            var flatCouponCustomers = topCustomers
+                .Where(c => c.TotalSpent >= 20000)
+                .Select(c => new CouponCustomer { CustomerId = c.CustomerId })
+                .ToList();
+
+            var percentCouponCustomers = topCustomers
+                .Where(c => c.TotalSpent >= 30000)
+                .Select(c => new CouponCustomer { CustomerId = c.CustomerId })
+                .ToList();
+
+            var bogoCouponCustomers = topCustomers
+                .Where(c => c.TotalOrders >= 6)
+                .Select(c => new CouponCustomer { CustomerId = c.CustomerId })
+                .ToList();
+
+            var couponsToInsert = new List<Coupon>();
             // Step 3: Prepare coupons in memory
-            var couponsToInsert = topCustomers
-                .Where(c => c.TotalSpent >= 33000)
-                .Select(c => new Coupon
+            if (flatCouponCustomers.Any())
+            {
+                couponsToInsert.Add(new Coupon
                 {
-                    Name = "Test Reward",
-                    DiscountType = DiscountType.Percent,
-                    DiscountValue = 10,
+                    Name = $"{monthName}Flat100",
+                    DiscountType = DiscountType.Flat,
+                    DiscountValue = 100,
                     StartDate = today,
                     EndDate = today.AddMonths(1),
-                    MinOrderAmount = 100,
+                    MinOrderAmount = 500,
                     IsActive = true,
-                    CouponCustomers = new List<CouponCustomer>
-                    {
-                new CouponCustomer { CustomerId = c.CustomerId }
-                    },
+                    CouponCustomers = flatCouponCustomers,
                     CouponRestaurants = restaurantId.HasValue
                         ? new List<CouponRestaurant>
                         {
                     new CouponRestaurant { RestaurantId = restaurantId.Value }
                         }
                         : new List<CouponRestaurant>()
-                })
-                .ToList();
+                });
+            }
+
+            if (percentCouponCustomers.Any())
+            {
+                couponsToInsert.Add(new Coupon
+                {
+                    Name = $"{monthName}Percent10",
+                    DiscountType = DiscountType.Percent,
+                    DiscountValue = 10,
+                    StartDate = today,
+                    EndDate = today.AddMonths(1),
+                    MinOrderAmount = 1000,
+                    IsActive = true,
+                    CouponCustomers = percentCouponCustomers,
+                    CouponRestaurants = restaurantId.HasValue
+                        ? new List<CouponRestaurant>
+                        {
+                    new CouponRestaurant { RestaurantId = restaurantId.Value }
+                        }
+                        : new List<CouponRestaurant>()
+                });
+            }
+
+            if (bogoCouponCustomers.Any())
+            {
+                couponsToInsert.Add(new Coupon
+                {
+                    Name = $"{monthName}BOGO",
+                    DiscountType = DiscountType.BOGO,
+                    DiscountValue = 1,
+                    StartDate = today,
+                    EndDate = today.AddMonths(1),
+                    MinOrderAmount = 0,
+                    IsActive = true,
+                    CouponCustomers = bogoCouponCustomers,
+                    CouponRestaurants = restaurantId.HasValue
+                        ? new List<CouponRestaurant>
+                        {
+                    new CouponRestaurant { RestaurantId = restaurantId.Value }
+                        }
+                        : new List<CouponRestaurant>()
+                });
+            }
+
 
             // Step 4: Bulk insert in single SaveChanges
             if (couponsToInsert.Any())
@@ -187,36 +245,62 @@ namespace RestaurantAPI.Services
 
         public async Task<List<CouponResponseDto>> GetCouponsForRestaurantAndCustomerAsync(int? restaurantId, int? customerId)
         {
-            // Step 1: Fetch coupons including relations
+            // Step 1: Start with active coupons
             var query = _context.Coupons
-                .Include(c => c.CouponRestaurants)
-                .Include(c => c.CouponCustomers)
-                .Where(c => c.IsActive) // Only active coupons
+                .Where(c => c.IsActive)
                 .AsQueryable();
 
-            // Step 2: Filter by restaurant
+            // Step 2: Filter by restaurant if provided
             if (restaurantId.HasValue)
             {
                 query = query.Where(c =>
-                    !c.CouponRestaurants.Any() || // Valid for all restaurants
-                    c.CouponRestaurants.Any(cr => cr.RestaurantId == restaurantId.Value)
+                    !_context.CouponRestaurants
+                        .Where(cr => cr.CouponId == c.Id)
+                        .Any() // Valid for all restaurants
+                    ||
+                    _context.CouponRestaurants
+                        .Where(cr => cr.CouponId == c.Id && cr.RestaurantId == restaurantId.Value)
+                        .Any() // Specific restaurant
                 );
             }
 
-            // Step 3: Filter by customer
+            // Step 3: Filter by customer if provided
             if (customerId.HasValue)
             {
                 query = query.Where(c =>
-                    !c.CouponCustomers.Any() || // Valid for all customers
-                    c.CouponCustomers.Any(cc => cc.CustomerId == customerId.Value)
+                    !_context.CouponsCustomer
+                        .Where(cc => cc.CouponId == c.Id)
+                        .Any() // Valid for all customers
+                    ||
+                    _context.CouponsCustomer
+                        .Where(cc => cc.CouponId == c.Id && cc.CustomerId == customerId.Value)
+                        .Any() // Specific customer
                 );
             }
 
             // Step 4: Fetch data
-            var coupons = await query.ToListAsync();
-
-            // Step 5: Map to DTO
-            var mapped = _mapper.Map<List<CouponResponseDto>>(coupons);
+            // Step 4: Project directly into DTO including IDs
+            var mapped = await query
+                .Select(c => new CouponResponseDto
+                {
+                    Id = c.Id,
+                    Name = c.Name,
+                    DiscountType = c.DiscountType.ToString(),
+                    DiscountValue = c.DiscountValue,
+                    StartDate = c.StartDate,
+                    EndDate = c.EndDate,
+                    MinOrderAmount = c.MinOrderAmount,
+                    IsActive = c.IsActive,
+                    CustomerIds = _context.CouponsCustomer
+                        .Where(cc => cc.CouponId == c.Id)
+                        .Select(cc => cc.CustomerId)
+                        .ToList(),
+                    RestaurantIds = _context.CouponRestaurants
+                        .Where(cr => cr.CouponId == c.Id)
+                        .Select(cr => cr.RestaurantId)
+                        .ToList()
+                })
+                .ToListAsync();
 
             return mapped;
         }

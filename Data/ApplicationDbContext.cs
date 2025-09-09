@@ -30,6 +30,19 @@ namespace RestaurantAPI.Data
         {
             base.OnModelCreating(modelBuilder);
 
+            // Adding fluent Api configuration for coupon 
+            modelBuilder.Entity<Coupon>(entity =>
+            { 
+                entity.Property(c => c.IsActive)
+                      .HasDefaultValue(true);
+
+                entity.HasCheckConstraint("CK_Coupon_DiscountValue_NonNegative", "[DiscountValue] >= 0");
+
+                entity.HasCheckConstraint("CK_Coupon_PercentMaxDiscount", "[DiscountType] <> 1 OR ([DiscountType]=1 AND [DiscountValue]<=100)");
+                     
+            }
+            );
+               
 
 
             // Coupon ↔ Restaurant (many-to-many)

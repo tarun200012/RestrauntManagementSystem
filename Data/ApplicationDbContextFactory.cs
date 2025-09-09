@@ -8,7 +8,7 @@ namespace RestaurantAPI.Data
         public ApplicationDbContext CreateDbContext(string[] args)
         {
             var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
-            optionsBuilder.UseSqlServer("Server=TARUNGUPTA1\\MSSQLSERVER14;Database=RestaurantDb;Trusted_Connection=True;TrustServerCertificate=True;");
+            optionsBuilder.UseSqlServer("Server=TARUNGUPTA1\\MSSQLSERVER14;Database=RestaurantDbTest;Trusted_Connection=True;TrustServerCertificate=True;");
 
             return new ApplicationDbContext(optionsBuilder.Options);
         }
